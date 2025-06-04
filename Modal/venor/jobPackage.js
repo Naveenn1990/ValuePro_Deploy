@@ -1,0 +1,39 @@
+const mongoose=require("mongoose");
+const PackageSchema=new mongoose.Schema({
+    packageName:{
+        type:String
+    },
+    totalJob:{
+        type:Number,
+        default:0
+    },
+    packageMinKm:{
+        type:Number,
+        default:0
+    },
+    packageMaxKm:{
+        type:Number,
+        default:0
+    },
+    packageDays:{
+        type:Number,
+        default:0
+    },
+    packageMinHr:{
+        type:Number,
+        default:0
+    },
+    price:{
+        type:Number,
+        default:0
+    },
+    commision:{
+        type:Number,
+        default:0
+    },
+    isActive:{
+        type:Boolean,
+        default:true
+    }
+});
+module.exports=mongoose.model("jobpackage",PackageSchema);
