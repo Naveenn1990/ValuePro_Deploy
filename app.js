@@ -846,18 +846,12 @@ app.use("/api/admin", Counts);
 app.use("/api/admin", Slotbooking);
 app.use("/api/user", RevisitRequest);
 // Socket.IO event handlers
+
 sanitizeString = (str) => {
   return xss(str);
 };
-app.use(express.static(path.join(__dirname, 'build'))); // Change 'build' to your frontend folder if needed
-
-// Redirect all requests to the index.html file
-
-app.get("*", (req, res) => {
-  return res.sendFile(path.join(__dirname, 'build', 'index.html'));
-});
 app.get("/", (req, res) => {
-  res.send("Welcome to urban company!");
+  res.send("Welcome to Value Pro Services!");
 });
 
 server.listen(PORT, () => {
