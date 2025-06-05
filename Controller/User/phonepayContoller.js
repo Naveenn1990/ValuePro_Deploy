@@ -33,7 +33,7 @@ const client = StandardCheckoutClient.getInstance(
 class Transaction{
 
   async addPaymentPhone(req, res) {
-    console.log("Req Body : " , req.body)
+
     try {
       const { userId, username, Mobile, orderId, amount, config } = req.body;
 
@@ -52,8 +52,8 @@ class Transaction{
 
       const merchantOrderId = data._id.toString(); // Use DB _id as unique order ID
 
-      // const redirectUrl = `https://valueproservice.com/payment-success?transactionId=${data._id}&userID=${userId}`;
-      const redirectUrl = `https://valueproservice.com/`;
+      const redirectUrl = `https://valueproservice.com/payment-success?transactionId=${data._id}&userID=${userId}`;
+      // const redirectUrl = `https://valueproservice.com/`;
 
       // Build the payment request
       const paymentRequest = StandardCheckoutPayRequest.builder()
