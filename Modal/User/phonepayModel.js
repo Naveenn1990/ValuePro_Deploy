@@ -26,6 +26,12 @@ const phonepaytransaction = new mongoose.Schema(
         type:String,
         default:"CR"
       },
+      successUrl:{
+        type:String
+      },
+      failedUrl:{
+        type:String
+      },
       config:{
         type:String  
       },

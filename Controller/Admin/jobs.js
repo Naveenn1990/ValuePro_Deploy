@@ -494,6 +494,7 @@ class Jobs {
         data.cotision="Approved"
         
         data.TotalAmount=data.TotalAmount+Number(RequestAmount);
+        data.payAmount=data.payAmount+Number(RequestAmount);
         data=await data.save();
       await NotificationsModel.create({
         title: "Quotation Approved",

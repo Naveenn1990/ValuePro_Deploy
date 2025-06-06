@@ -37,7 +37,7 @@ class Transaction {
   async addPaymentPhone(req, res) {
 
     try {
-      const { userId, username, Mobile, orderId, amount, config } = req.body;
+      const { userId, username, Mobile, orderId, amount, config,successUrl,failedUrl } = req.body;
 
       // Save transaction details in DB
       const data = await transactionModel.create({
@@ -47,6 +47,7 @@ class Transaction {
         orderId,
         amount,
         config,
+        successUrl,failedUrl
       });
 
       if (!data)
@@ -86,95 +87,75 @@ class Transaction {
     }
   }
 
-  // async addPaymentPhone(req, res) {
-  //   let transaction; // Declare transaction here to fix the ReferenceError
+  async addPaymentMobile(req, res) {
+    let transaction; // Declare transaction here to fix the ReferenceError
 
-  //   try {
-  //     // Validate input
-  //     const { userId, username, Mobile, orderId, amount } = req.body;
-  //     if (!userId || !username || !Mobile || !amount) {
-  //       return res.status(400).json({ error: "Missing required fields" });
-  //     }
+    try {
+      // Validate input
+      const { userId, username, Mobile, orderId, amount } = req.body;
+      if (!userId || !username || !Mobile || !amount) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
 
-  //     // Create transaction record
-  //     transaction = await transactionModel.create({
-  //       userId,
-  //       username,
-  //       Mobile,
-  //       orderId: orderId || `ORD_${Date.now()}`,
-  //       amount,
-  //       status: 'INITIATED'
-  //     })
+      // Create transaction record
+      transaction = await transactionModel.create({
+        userId,
+        username,
+        Mobile,
+        orderId: orderId || `ORD_${Date.now()}`,
+        amount,
+        status: 'INITIATED'
+      })
 
-  //     // Prepare payment payload
-  //     const paymentPayload = {
-  //       merchantId: MERCHANT_ID,
-  //       merchantTransactionId: transaction._id.toString(),
-  //       merchantUserId: userId,
-  //       amount: amount * 100, // Convert to paise
-  //       // redirectUrl: `https://valueproservice.com/payment-success?transactionId=${transaction._id}&userID=${userId}`,
-  //       redirectUrl: `https://valueproservice.com`,
-  //       redirectMode: "POST",
-  //       // callbackUrl: "https://valueproservice.com/api/user/payment-callback",
-  //       callbackUrl: "https://valueproservice.com",
-  //       mobileNumber: Mobile,
-  //       paymentInstrument: {
-  //         type: "PAY_PAGE"
-  //       }
-  //     };
+      // Prepare payment payload
+      const paymentPayload = {
+        merchantId: "M22IJ7E10A8LQ",
+        merchantTransactionId: transaction._id.toString(),
+        merchantUserId: userId,
+        amount: amount * 100, // Convert to paise
+        redirectUrl: `https://valueproservice.com/payment-success?transactionId=${transaction._id}&userID=${userId}`,
 
-  //     // Generate signature
-  //     const base64Payload = Buffer.from(JSON.stringify(paymentPayload)).toString('base64');
-  //     const stringToHash = base64Payload + '/pg/v1/pay' + SALT_KEY;
-  //     const sha256Hash = crypto.createHash('sha256').update(stringToHash).digest('hex');
-  //     const signature = sha256Hash + '###' + SALT_INDEX;
 
-  //     // Make API request
-  //     const response = await axios.post(PHONEPE_API_URL, {
-  //       request: base64Payload
-  //     }, {
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         'X-VERIFY': signature,
-  //         'X-MERCHANT-ID': MERCHANT_ID
-  //       }
-  //     });
+        callbackUrl: "https://coorgtour.in/api/user/checkPayment/" + transaction._id + "/" + userId,
 
-  //     console.log("PhonePe Response: ", response.data);
+        mobileNumber: Mobile,
+        paymentInstrument: {
+          type: "PAY_PAGE"
+        }
+      };
 
-  //     // Handle response
-  //     if (response.data.code === 'PAYMENT_INITIATED') {
-  //       await transactionModel.findByIdAndUpdate(transaction._id, { status: 'REDIRECTED' });
-  //       return res.status(200).json({
-  //         success: true,
-  //         paymentUrl: response.data.data.instrumentResponse.redirectInfo.url,
-  //         transactionId: transaction._id
-  //       });
-  //     } else {
-  //       await transactionModel.findByIdAndUpdate(transaction._id, { status: 'FAILED', error: response.data.message });
-  //       return res.status(400).json({ 
-  //         error: "Payment initiation failed",
-  //         details: response.data 
-  //       });
-  //     }
+      // Generate signature
+      const base64Payload = Buffer.from(JSON.stringify(paymentPayload)).toString('base64');
+      const stringToHash = base64Payload + '/pg/v1/pay' + clientSecret;
+      const sha256Hash = crypto.createHash('sha256').update(stringToHash).digest('hex')+'###' + 1;
+      const signature = sha256Hash + '###' + clientSecret;
 
-  //   } catch (error) {
-  //     console.error("Payment Error:", error.message);
+      res.status(200).json({
+        success: true,
+        data: {
+          transactionBody: base64Payload,
+          checksum: sha256Hash,
+          transactionId: transaction._id,
+        },
+      });
 
-  //     // Update transaction status if it was created
-  //     if (transaction) {
-  //       await transactionModel.findByIdAndUpdate(transaction._id, { 
-  //         status: 'FAILED',
-  //         error: error.response?.data?.message || error.message 
-  //       });
-  //     }
+    } catch (error) {
+      console.error("Payment Error:", error.message);
 
-  //     return res.status(500).json({ 
-  //       error: "Payment processing error",
-  //       details: error.response?.data || error.message 
-  //     });
-  //   }
-  // }
+      // Update transaction status if it was created
+      if (transaction) {
+        await transactionModel.findByIdAndUpdate(transaction._id, {
+          status: 'FAILED',
+          error: error.response?.data?.message || error.message
+        });
+      }
+
+      return res.status(500).json({
+        error: "Payment processing error",
+        details: error.response?.data || error.message
+      });
+    }
+  }
 
   async updateStatuspayment(req, res) {
     try {
@@ -194,7 +175,7 @@ class Transaction {
 
       let id = req.params.id;
       let userId = req.params.userId
-          let data = await transactionModel.findById(id);
+      let data = await transactionModel.findById(id);
       if (!data) return res.status(400).json({ error: "Payment Id not found!" })
       client.getOrderStatus(id).then(async (response) => {
         const state = response.state;
