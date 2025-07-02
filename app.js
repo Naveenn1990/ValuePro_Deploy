@@ -101,7 +101,7 @@ const initiateCall = async (req, res) => {
           user: JSON.stringify(user),
           offer: JSON.stringify(offer),
         },
-        token: partner?.mobilefcmtoken ||partner?.webfcmtoken,
+        token: partner?.mobilefcmtoken ||partner?.fcmtoken||partner?.webfcmtoken,
       };
     
       await admin.messaging().send(message);
