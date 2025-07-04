@@ -800,6 +800,7 @@ const Slotbooking = require("./Routes/Admin/Slotbooking");
 const RevisitRequest = require("./Routes/User/ProRequest");
 const phonepay = require('./Routes/User/phonepayRoutes');
 const { uploadFile2 } = require("./Config/AWS.js");
+const visitCharge=require('./Routes/Admin/VisitCharge')
 // create route
 
 // User
@@ -845,6 +846,7 @@ app.use("/api/admin", Trusted);
 app.use("/api/admin", Counts);
 app.use("/api/admin", Slotbooking);
 app.use("/api/user", RevisitRequest);
+app.use("/api/admin", visitCharge);
 // Socket.IO event handlers
 
 sanitizeString = (str) => {
