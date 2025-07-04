@@ -181,6 +181,7 @@ class Jobs {
         longitude,
         Avoidcallingbefore,
         jobcommision,
+        visitCharge,
       } = req.body;
       
        const commissionData = await commissionModel.findOne();
@@ -220,6 +221,7 @@ class Jobs {
         location: { type: "Point", coordinates: [longitude, latitude] },
         servicecommission: serviceCommission,
         productcommission: finalTotalAmount,
+        visitCharge
       });
 
       if (!data) return res.status(400).json({ error: "Something went wrong" });

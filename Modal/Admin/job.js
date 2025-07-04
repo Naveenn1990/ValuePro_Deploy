@@ -203,6 +203,10 @@ const jobSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+     visitCharge: {
+      type: Number,
+      default: 0,
+    },
     payId: {
       type: String,
     },

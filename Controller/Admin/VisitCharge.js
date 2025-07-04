@@ -15,6 +15,7 @@ class Visit{
         } catch (error) {
             console.log(error);
             
+            
         }
     }
 
