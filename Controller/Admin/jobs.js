@@ -23,11 +23,11 @@ async function assignedJobAuto(id) {
     if (job.VendorStatus === "Accepted") {
       return console.log("Job has already been accepted, no need to assign.");
     }
-    // AvRating:{ $gt: 4.5 }
-    const jobPincode = job.pincode;
+
     let vendors = await vendorModel.find({
       assignmentHubPincode: job.pincode,
-      isBlock: false,$or:[{AvRating:{ $gt: 4.5 }},{ResponseRate:{$lt:20}}]
+      isBlock: false,$or:[{AvRating:{ $gt: 4.5 }},{ResponseRate:{$lt:20}}],
+      status:"Approved"
     });
  
     vendors = vendors.filter(

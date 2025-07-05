@@ -278,10 +278,17 @@ class Vendor {
       if (!compare) {
         return res.status(400).send({ error: "Incorrect password" });
       }
+
+       if(check2.status!=="Approved") return  res
+          .status(400)
+          .json({ error: "Your acount is not approved please wait for admin approval" });
+
       if (check2.isBlock == true)
         return res
           .status(400)
           .json({ error: "Your acount is blocked please contact to admin" });
+
+         
       let data = await vendorModel.findOneAndUpdate(
         { _id: check2._id },
         { $set: { Active: "Online" } },

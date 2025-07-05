@@ -148,8 +148,11 @@ const Emmiter = require("./Controller/Emmiter.js");
 
 io.on("connection", (socket) => {
   // Client-side socket event handling
-  socket.on("CheckJob", (vendor) => {
+  socket.on("CheckJob", async(vendor) => {
     console.log("Checking job for vendor:", vendor);
+
+    const check=await Partner.findOne({_id:vendor,status:"Approved"});
+    if(!check) return;
     // Emit events to fetch and auto assign jobs for the specified vendor
     Emmiter.emitEvent("JobEvent", vendor);
     Emmiter.emitEvent("AutoAssignedJob", vendor);
@@ -158,7 +161,7 @@ io.on("connection", (socket) => {
   // Server-side socket event handlers
   Emmiter.emitter.on("JobEvent", async (vendor) => {
     try {
-      console.log("Fetching jobs for vendor:", vendor);
+      // console.log("Fetching jobs for vendor:", vendor);
       let vendorAllJobs = await JobModel.find({ VendorStatus: "Flash" });
       if (vendorAllJobs.length == 0) {
         io.emit("FlashJob", [{ check: "Admin" }]);
@@ -173,16 +176,16 @@ io.on("connection", (socket) => {
 
   Emmiter.emitter.on("AutoAssignedJob", async (vendor) => {
     try {
-      console.log("Auto assigning jobs for vendor:", vendor);
+      // console.log("Auto assigning jobs for vendor:", vendor);
       let vendorAssignedJobs = await JobModel.find({
         vendorId: vendor,
         VendorStatus: "Assigned",
       });
-      console.log(
-        "Auto assigning :",
-        vendorAssignedJobs[0]?.vendorId,
-        vendorAssignedJobs.length
-      );
+      // console.log(
+      //   "Auto assigning :",
+      //   vendorAssignedJobs[0]?.vendorId,
+      //   vendorAssignedJobs.length
+      // );
       if (vendorAssignedJobs.length == 0) {
         io.emit(`JobAssignedByVendor_${vendor}`, [{ check: "Admin" }]);
       } else {
