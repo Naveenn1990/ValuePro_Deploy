@@ -7,6 +7,14 @@ let VisitSchema = new Schema(
       type: Number,
       default:0
     },
+    cancelCharge:{
+      type:Number,
+      default:0
+    },
+    jobCharge:{
+      type:Number,
+      default:0
+    }
   
   },
   { timestamps: true }
