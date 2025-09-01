@@ -685,7 +685,7 @@ app.put("/updateFaceImaes", upload.single("image"), async (req, res) => {
     if (!check) return res.status(400).json({ error: "Data not found" });
 
     const img = await canvas.loadImage(imagePath);
-    console.log(img,"uuuuuu");
+    // console.log(img,"uuuuuu");
     const detections = await faceapi
       .detectAllFaces(img)
       .withFaceLandmarks()
@@ -701,6 +701,12 @@ app.put("/updateFaceImaes", upload.single("image"), async (req, res) => {
         },
       }
     );
+
+    const vendorD=await Partner.findById(userId)
+    if(vendorD){
+      vendorD.status="Pending"
+      await vendorD.save()
+    }
 
     return res.status(200).json({ success: "Successfully updated" });
   } catch (error) {

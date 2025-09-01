@@ -1,7 +1,7 @@
 const jobsModel = require("../../Modal/Admin/job");
 const NotificationsModel = require("../../Modal/Admin/Notifications");
 const vendorModel = require("../../Modal/venor/vendor");
-const commissionModel=require("../../Modal/Admin/commission");
+const commissionModel = require("../../Modal/Admin/commission");
 const moment = require("moment");
 const { emitter, emitEvent } = require("../Emmiter");
 const { uploadFile2 } = require("../../Config/AWS");
@@ -26,10 +26,10 @@ async function assignedJobAuto(id) {
 
     let vendors = await vendorModel.find({
       assignmentHubPincode: job.pincode,
-      isBlock: false,$or:[{AvRating:{ $gt: 4.5 }},{ResponseRate:{$lt:20}}],
-      status:"Approved"
+      isBlock: false, $or: [{ AvRating: { $gt: 4.5 } }, { ResponseRate: { $lt: 20 } }],
+      status: "Approved"
     });
- 
+
     vendors = vendors.filter(
       (item) =>
         item.TimeOn &&
@@ -66,13 +66,13 @@ async function assignedJobAuto(id) {
       //   console.log(`Vendor ${vendor.name}'s subscription has expired. Skipping assignment.`);
       //   continue;
       // }
-      let VendorJobCheck=await jobsModel.findOne({vendorId:vendor._id,serviceDate:job.serviceDate,serviceTime:job.serviceTime,$or:[{status:"Confirmed"},{status:"Pending"},{status:"Work Start"},{status:"Pause"},{status:"Quotation Request"}]});
-      if(VendorJobCheck){
-          continue;
+      let VendorJobCheck = await jobsModel.findOne({ vendorId: vendor._id, serviceDate: job.serviceDate, serviceTime: job.serviceTime, $or: [{ status: "Confirmed" }, { status: "Pending" }, { status: "Work Start" }, { status: "Pause" }, { status: "Quotation Request" }] });
+      if (VendorJobCheck) {
+        continue;
       }
-       await assignJobToVendor(id, vendor);
+      await assignJobToVendor(id, vendor);
       await delay(2 * 60 * 1000); // 15 minutes delay
- 
+
       // Check if the job is still pending and reassign if necessary
       const updatedJob = await jobsModel.findById(id);
       if (updatedJob && updatedJob.VendorStatus !== "Accepted") {
@@ -183,12 +183,12 @@ class Jobs {
         jobcommision,
         visitCharge,
       } = req.body;
-      
-       const commissionData = await commissionModel.findOne();
-       const serviceCommission = commissionData?.seramt || 0;
-       const productCommission = commissionData?.productpr || 0;
-       const productCommissionCut = TotalAmount * (productCommission / 100);
-       const finalTotalAmount = TotalAmount - productCommissionCut;
+
+      const commissionData = await commissionModel.findOne();
+      const serviceCommission = commissionData?.seramt || 0;
+      const productCommission = commissionData?.productpr || 0;
+      const productCommissionCut = TotalAmount * (productCommission / 100);
+      const finalTotalAmount = TotalAmount - productCommissionCut;
 
       let data = await jobsModel.create({
         userId,
@@ -254,8 +254,8 @@ class Jobs {
         serviceType,
         jobcommision,
       } = req.body;
-      if(jobcommision){
-          obj["jobcommision"]=jobcommision
+      if (jobcommision) {
+        obj["jobcommision"] = jobcommision
       }
       if (serviceRemark) {
         obj["serviceRemark"] = serviceRemark;
@@ -463,9 +463,9 @@ class Jobs {
       console.log(error);
     }
   }
-  
+
   //Create Cotation
-    async CreateCotisonFromVendor(req, res) {
+  async CreateCotisonFromVendor(req, res) {
     try {
       let { id, TotalAmount, serviceRemark } = req.body;
       let job = await jobsModel.findById(id);
@@ -476,10 +476,10 @@ class Jobs {
       if (serviceRemark) {
         job.serviceRemark = serviceRemark;
       }
-      job.cotision="Requested"
-      job.status="Quotation Request"
-   job=await  job.save()
-      return res.status(200).json({success:job,msg:"Successfully updated"})
+      job.cotision = "Requested"
+      job.status = "Quotation Request"
+      job = await job.save()
+      return res.status(200).json({ success: job, msg: "Successfully updated" })
     } catch (error) {
       console.log(error);
     }
@@ -488,16 +488,16 @@ class Jobs {
   // Accept cotision
   async makecotision(req, res) {
     try {
-      let { id ,RequestAmount} = req.body;
+      let { id, RequestAmount } = req.body;
 
       let data = await jobsModel.findById(id);
 
       if (!data) return res.status(400).json({ error: "Data not found" });
-        data.cotision="Approved"
-        
-        data.TotalAmount=data.TotalAmount+Number(RequestAmount);
-        data.payAmount=data.payAmount+Number(RequestAmount);
-        data=await data.save();
+      data.cotision = "Approved"
+
+      data.TotalAmount = data.TotalAmount + Number(RequestAmount);
+      // data.payAmount=data.payAmount+Number(RequestAmount);
+      data = await data.save();
       await NotificationsModel.create({
         title: "Quotation Approved",
         userid: data?.vendorId,
@@ -608,10 +608,10 @@ class Jobs {
       let obj = { serviceId, price, quntitity, name, actualPrice };
       let check = await jobsModel.findById(id);
       if (!check) return res.status(400).json({ error: "Data not found" });
-       let am = check?.serviceType?.filter(
+      let am = check?.serviceType?.filter(
         (ele) => ele?.serviceId?.toString() == serviceId.toString()
       );
-      if (am.length != 0){
+      if (am.length != 0) {
         check = await jobsModel.findOneAndUpdate(
           { _id: id },
           { $pull: { serviceType: { serviceId: serviceId } } },
@@ -624,11 +624,11 @@ class Jobs {
         { $push: { serviceType: obj } },
         { new: true }
       );
-      let serViceAmount=Number(check?.serviceType?.reduce((a, item) => a + item?.price, 0));
-      let amount =serViceAmount+Number(check?.servecePoint?.reduce((a, item) => a + item?.price, 0));
+      let serViceAmount = Number(check?.serviceType?.reduce((a, item) => a + item?.price, 0));
+      let amount = serViceAmount + Number(check?.servecePoint?.reduce((a, item) => a + item?.price, 0));
       check = await jobsModel.findOneAndUpdate(
         { _id: id },
-        { $set: { TotalAmount: amount,serviceAmount:serViceAmount } },
+        { $set: { TotalAmount: amount, serviceAmount: serViceAmount } },
         { new: true }
       );
 
@@ -655,7 +655,7 @@ class Jobs {
       if (!data) return res.status(400).json({ error: "Data not found" });
       await jobsModel.findOneAndUpdate(
         { _id: id },
-        { $set: { TotalAmount: Number(data?.TotalAmount) - Number(price),serviceAmount:Number(data?.serviceAmount) - Number(price) } }
+        { $set: { TotalAmount: Number(data?.TotalAmount) - Number(price), serviceAmount: Number(data?.serviceAmount) - Number(price) } }
       );
       return res.status(200).json({ success: "Successfully deleted" });
     } catch (error) {
@@ -674,7 +674,7 @@ class Jobs {
     }
   }
 
-   async uploadFourImageStartJob(req, res) {
+  async uploadFourImageStartJob(req, res) {
     try {
       let { id } = req.body;
       let data = await jobsModel.findById(id);
@@ -685,77 +685,87 @@ class Jobs {
         let i;
         for (i = 0; i < arr?.length; i++) {
           if (arr[i].fieldname == "Image1") {
-            let img=await uploadFile2(arr[i],"chat")
+            let img = await uploadFile2(arr[i], "chat")
             data.Image1 = img;
-            Chats.push({ id: Chats.length,
+            Chats.push({
+              id: Chats.length,
               image: img,
               fromUser: true,
               sendId: data.vendorId,
-              text:"Start Job Image 1",
+              text: "Start Job Image 1",
               recivedId: data.userId,
               jobId: data?._id,
               data: moment().format('LLL'),
-              name: data?.name,})
+              name: data?.name,
+            })
           }
           if (arr[i].fieldname == "Image2") {
-             let img2=await uploadFile2(arr[i],"chat")
+            let img2 = await uploadFile2(arr[i], "chat")
             data.Image2 = img2;
-            Chats.push({ id: Chats.length,
+            Chats.push({
+              id: Chats.length,
               image: img2,
               fromUser: true,
               sendId: data.vendorId,
-              text:"Start Job Image 2",
+              text: "Start Job Image 2",
               recivedId: data.userId,
               jobId: data?._id,
               data: moment().format('LLL'),
-              name: data?.name,})
+              name: data?.name,
+            })
           }
           if (arr[i].fieldname == "Image3") {
-             let img23=await uploadFile2(arr[i],"chat")
-            data.Image3= img23;
-            Chats.push({ id: Chats.length,
+            let img23 = await uploadFile2(arr[i], "chat")
+            data.Image3 = img23;
+            Chats.push({
+              id: Chats.length,
               image: img23,
               fromUser: true,
               sendId: data.vendorId,
-              text:"Start Job Image 3",
+              text: "Start Job Image 3",
               recivedId: data.userId,
               jobId: data?._id,
               data: moment().format('LLL'),
-              name: data?.name,})
+              name: data?.name,
+            })
           }
           if (arr[i].fieldname == "requestProof") {
-             let imgrq=await uploadFile2(arr[i],"chat")
+            let imgrq = await uploadFile2(arr[i], "chat")
             data.requestProof = imgrq;
-            Chats.push({ id: Chats.length,
+            Chats.push({
+              id: Chats.length,
               image: imgrq,
               fromUser: true,
               sendId: data.vendorId,
-              text:"Request Proof",
+              text: "Request Proof",
               recivedId: data.userId,
               jobId: data?._id,
               data: moment().format('LLL'),
-              name: data?.name,})
+              name: data?.name,
+            })
           }
           if (arr[i].fieldname == "Image4") {
-              let img4=await uploadFile2(arr[i],"chat")
+            let img4 = await uploadFile2(arr[i], "chat")
             data.Image4 = img4;
             data.uploadImage = true;
-            Chats.push({ id: Chats.length,
+            Chats.push({
+              id: Chats.length,
               image: img4,
               fromUser: true,
               sendId: data.vendorId,
-              text:"Start Job Image 4",
+              text: "Start Job Image 4",
               recivedId: data.userId,
               jobId: data?._id,
               data: moment().format('LLL'),
-              name: data?.name,})
-      
+              name: data?.name,
+            })
+
           }
         }
       }
       data.VendorStatus = "Work Start";
       data.status = "Work Start";
-      data.chat=Chats;
+      data.chat = Chats;
       await data.save();
       await NotificationsModel.create({
         title: "Start job upload Images",
@@ -770,7 +780,7 @@ class Jobs {
     }
   }
 
-   async uploadFourImageHandOverJob(req, res) {
+  async uploadFourImageHandOverJob(req, res) {
     try {
       let { id } = req.body;
       let data = await jobsModel.findById(id);
@@ -781,7 +791,7 @@ class Jobs {
         let i;
         for (i = 0; i < arr?.length; i++) {
           if (arr[i].fieldname == "handOverImage1") {
-              let imghd=await uploadFile2(arr[i],"chat")
+            let imghd = await uploadFile2(arr[i], "chat")
             data.handOverImage1 = imghd;
             Chats.push({
               id: Chats.length,
@@ -796,7 +806,7 @@ class Jobs {
             });
           }
           if (arr[i].fieldname == "handOverImage2") {
-              let imghd2=await uploadFile2(arr[i],"chat")
+            let imghd2 = await uploadFile2(arr[i], "chat")
             data.handOverImage2 = imghd2;
             Chats.push({
               id: Chats.length,
@@ -811,11 +821,11 @@ class Jobs {
             });
           }
           if (arr[i].fieldname == "handOverImage3") {
-              let imghd3=await uploadFile2(arr[i],"chat")
-            data.handOverImage3 =imghd3;
+            let imghd3 = await uploadFile2(arr[i], "chat")
+            data.handOverImage3 = imghd3;
             Chats.push({
               id: Chats.length,
-              image:imghd3,
+              image: imghd3,
               fromUser: true,
               sendId: data.vendorId,
               text: "Post Job Laptop Check for Physical Condition",
@@ -826,7 +836,7 @@ class Jobs {
             });
           }
           if (arr[i].fieldname == "handOverImage4") {
-              let imghd4=await uploadFile2(arr[i],"chat")
+            let imghd4 = await uploadFile2(arr[i], "chat")
             data.handOverImage4 = imghd4;
             Chats.push({
               id: Chats.length,
@@ -840,8 +850,8 @@ class Jobs {
               name: data?.name,
             });
           }
-           if (arr[i].fieldname == "requestProof") {
-            let imgrq=await uploadFile2(arr[i],"chat")
+          if (arr[i].fieldname == "requestProof") {
+            let imgrq = await uploadFile2(arr[i], "chat")
             Chats.push({
               id: Chats.length,
               image: imgrq,
@@ -859,7 +869,7 @@ class Jobs {
       }
       data.VendorStatus = "Complete";
       data.status = "Complete";
- data.chat=Chats;
+      data.chat = Chats;
       await data.save();
 
       await NotificationsModel.create({
@@ -887,7 +897,7 @@ class Jobs {
           $set: {
             scheduleDate,
             scheduleTime,
-            serviceDate:scheduleDate,serviceTime:scheduleTime,
+            serviceDate: scheduleDate, serviceTime: scheduleTime,
             vendorAdvanceAm,
             TotalAmount: Number(cheak.TotalAmount) - Number(vendorAdvanceAm),
             reason,
@@ -903,9 +913,8 @@ class Jobs {
         Amount: vendorAdvanceAm,
         comment: `₹ Advance Take Amount  and reason  ${reason} schedule ${moment(
           data?.scheduleDate
-        ).format("YYYY-MM-DD")} ${data?.userName} and user-address ${
-          data?.userAddress
-        }`,
+        ).format("YYYY-MM-DD")} ${data?.userName} and user-address ${data?.userAddress
+          }`,
       });
       return res.status(200).json({ success: "Successfully uploaded" });
     } catch (error) {
@@ -1170,23 +1179,23 @@ class Jobs {
       console.log(error);
     }
   }
- 
- async makeCancelJobByUser(req,res){
-     try{
-         let {id,reason,refouned}=req.body;
-         let data=await jobsModel.findOneAndUpdate({_id:id},{$set:{VendorStatus:"Cancel",status:"Cancel",refouned:refouned}});
-         if(!data) return res.status(400).json({error:"Data not found"});
-         return res.status(200).json({success:"Successfully canceled"})
-         
-     }catch(error){
-         console.log(error)
-     }
- }
- 
- async updatecomission(req, res) {
+
+  async makeCancelJobByUser(req, res) {
+    try {
+      let { id, reason, refouned } = req.body;
+      let data = await jobsModel.findOneAndUpdate({ _id: id }, { $set: { VendorStatus: "Cancel", status: "Cancel", refouned: refouned } });
+      if (!data) return res.status(400).json({ error: "Data not found" });
+      return res.status(200).json({ success: "Successfully canceled" })
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  async updatecomission(req, res) {
     try {
       let { id, commissionId, recivedammount, statuscheck } = req.body;
-      console.log(id, commissionId, recivedammount, statuscheck,"id, commissionId, recivedammount, statuscheck>>>")
+      console.log(id, commissionId, recivedammount, statuscheck, "id, commissionId, recivedammount, statuscheck>>>")
       let obj = {};
       if (commissionId) {
         obj["commissionId"] = commissionId;
@@ -1211,6 +1220,6 @@ class Jobs {
     }
   }
 
- 
+
 }
 module.exports = new Jobs();
