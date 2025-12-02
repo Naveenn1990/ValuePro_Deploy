@@ -22,5 +22,5 @@ console.log("che",io);
     //     res.status(500).json({ message: 'No available vendors' });
     // }
 }
-console.log("Amit",am);
+// console.log("Amit",am);
 module.exports={JobBook}

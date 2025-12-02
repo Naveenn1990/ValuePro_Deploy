@@ -66,8 +66,40 @@ async function assignedJobAuto(id) {
       //   console.log(`Vendor ${vendor.name}'s subscription has expired. Skipping assignment.`);
       //   continue;
       // }
-      let VendorJobCheck = await jobsModel.findOne({ vendorId: vendor._id, serviceDate: job.serviceDate, serviceTime: job.serviceTime, $or: [{ status: "Confirmed" }, { status: "Pending" }, { status: "Work Start" }, { status: "Pause" }, { status: "Quotation Request" }] });
-      if (VendorJobCheck) {
+      // Check if vendor has any job on the same date with active status
+      let VendorJobsOnSameDate = await jobsModel.find({ 
+        vendorId: vendor._id, 
+        serviceDate: job.serviceDate,
+        $or: [
+          { status: "Confirmed" }, 
+          { status: "Pending" }, 
+          { status: "Work Start" }, 
+          { status: "Pause" }, 
+          { status: "Quotation Request" }
+        ] 
+      });
+
+      // Check for 2-hour gap between jobs
+      let hasTimeConflict = false;
+      if (VendorJobsOnSameDate.length > 0) {
+        const newJobTime = parseTimeSlot(job.serviceTime);
+        
+        for (const existingJob of VendorJobsOnSameDate) {
+          const existingJobTime = parseTimeSlot(existingJob.serviceTime);
+          
+          // Calculate time difference in hours
+          const timeDifference = Math.abs(newJobTime - existingJobTime);
+          
+          // If time difference is less than 2 hours, skip this vendor
+          if (timeDifference < 2) {
+            hasTimeConflict = true;
+            console.log(`Vendor ${vendor.name} has a job within 2 hours. Skipping assignment.`);
+            break;
+          }
+        }
+      }
+
+      if (hasTimeConflict) {
         continue;
       }
       await assignJobToVendor(id, vendor);
@@ -146,6 +178,29 @@ function delay(ms) {
 
 function delayForNewAss(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Helper function to parse time slot and convert to hours
+function parseTimeSlot(timeSlot) {
+  // Handle different time slot formats
+  // Examples: "9-12", "12-3", "3-6", "6-9", "09:00", "14:30", etc.
+  
+  if (!timeSlot) return 0;
+  
+  // If time slot is in format "9-12" or "12-3", take the start time
+  if (timeSlot.includes('-')) {
+    const startTime = timeSlot.split('-')[0].trim();
+    return parseFloat(startTime);
+  }
+  
+  // If time slot is in format "09:00" or "14:30"
+  if (timeSlot.includes(':')) {
+    const [hours, minutes] = timeSlot.split(':');
+    return parseFloat(hours) + parseFloat(minutes) / 60;
+  }
+  
+  // If it's just a number
+  return parseFloat(timeSlot);
 }
 
 class Jobs {
