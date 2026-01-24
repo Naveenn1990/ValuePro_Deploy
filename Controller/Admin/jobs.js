@@ -727,6 +727,27 @@ class Jobs {
       // Get today's date in YYYY-MM-DD format
       const today = moment().format('YYYY-MM-DD');
       
+      // Helper function to convert time string to minutes
+      const convertTimeToMinutes = (timeString) => {
+        if (!timeString) return 0;
+        
+        const timeParts = timeString.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (!timeParts) return 0;
+        
+        let hours = parseInt(timeParts[1]);
+        const minutes = parseInt(timeParts[2]);
+        const period = timeParts[3].toUpperCase();
+        
+        // Convert to 24-hour format
+        if (period === 'PM' && hours !== 12) {
+          hours += 12;
+        } else if (period === 'AM' && hours === 12) {
+          hours = 0;
+        }
+        
+        return hours * 60 + minutes;
+      };
+      
       // Sort by date (today first) and then by serviceTime
       data.sort((a, b) => {
         const dateA = a.serviceDate;
@@ -746,8 +767,8 @@ class Jobs {
         }
         
         // If dates are the same, sort by serviceTime
-        const timeA = this.convertTimeToMinutes(a.serviceTime);
-        const timeB = this.convertTimeToMinutes(b.serviceTime);
+        const timeA = convertTimeToMinutes(a.serviceTime);
+        const timeB = convertTimeToMinutes(b.serviceTime);
         return timeA - timeB;
       });
       
@@ -755,27 +776,6 @@ class Jobs {
     } catch (error) {
       console.log(error);
     }
-  }
-
-  // Helper function to convert time string (e.g., "01:00 PM") to minutes
-  convertTimeToMinutes(timeString) {
-    if (!timeString) return 0;
-    
-    const timeParts = timeString.match(/(\d+):(\d+)\s*(AM|PM)/i);
-    if (!timeParts) return 0;
-    
-    let hours = parseInt(timeParts[1]);
-    const minutes = parseInt(timeParts[2]);
-    const period = timeParts[3].toUpperCase();
-    
-    // Convert to 24-hour format
-    if (period === 'PM' && hours !== 12) {
-      hours += 12;
-    } else if (period === 'AM' && hours === 12) {
-      hours = 0;
-    }
-    
-    return hours * 60 + minutes;
   }
 
   async uploadFourImageStartJob(req, res) {
