@@ -722,11 +722,60 @@ class Jobs {
   async getJobsByVendorId(req, res) {
     try {
       let id = req.params.id;
-      let data = await jobsModel.find({ vendorId: id }).sort({ _id: -1 });
+      let data = await jobsModel.find({ vendorId: id });
+      
+      // Get today's date in YYYY-MM-DD format
+      const today = moment().format('YYYY-MM-DD');
+      
+      // Sort by date (today first) and then by serviceTime
+      data.sort((a, b) => {
+        const dateA = a.serviceDate;
+        const dateB = b.serviceDate;
+        
+        // Check if dates are today
+        const isAToday = dateA === today;
+        const isBToday = dateB === today;
+        
+        // Today's jobs come first
+        if (isAToday && !isBToday) return -1;
+        if (!isAToday && isBToday) return 1;
+        
+        // If both are today or both are not today, compare dates
+        if (dateA !== dateB) {
+          return new Date(dateA) - new Date(dateB);
+        }
+        
+        // If dates are the same, sort by serviceTime
+        const timeA = this.convertTimeToMinutes(a.serviceTime);
+        const timeB = this.convertTimeToMinutes(b.serviceTime);
+        return timeA - timeB;
+      });
+      
       return res.status(200).json({ success: data });
     } catch (error) {
       console.log(error);
     }
+  }
+
+  // Helper function to convert time string (e.g., "01:00 PM") to minutes
+  convertTimeToMinutes(timeString) {
+    if (!timeString) return 0;
+    
+    const timeParts = timeString.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!timeParts) return 0;
+    
+    let hours = parseInt(timeParts[1]);
+    const minutes = parseInt(timeParts[2]);
+    const period = timeParts[3].toUpperCase();
+    
+    // Convert to 24-hour format
+    if (period === 'PM' && hours !== 12) {
+      hours += 12;
+    } else if (period === 'AM' && hours === 12) {
+      hours = 0;
+    }
+    
+    return hours * 60 + minutes;
   }
 
   async uploadFourImageStartJob(req, res) {
