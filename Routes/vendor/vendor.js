@@ -29,6 +29,9 @@ router.put(
 router.put("/UpdateCommisionVendor", vendorController.UpdateCommisionVendor);
 router.put("/updateLocationVendor", vendorController.updateLocationVendor);
 router.put("/makeAssignedHubVendor",vendorController.makeAssignedHubVendor);
+router.put("/assignMultipleHubsToVendor", vendorController.assignMultipleHubsToVendor);
+router.put("/removeHubFromVendor", vendorController.removeHubFromVendor);
+router.get("/getVendorsByPincode/:pincode", vendorController.getVendorsByPincode);
 router.put("/addRating", vendorController.addRating);
 router.put("/MarkTimeOnOfVendor",vendorController.MarkTimeOnOfVendor);
 router.put("/updatevendortoken",vendorController.updatevendortoken);

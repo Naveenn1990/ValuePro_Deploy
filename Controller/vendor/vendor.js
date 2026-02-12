@@ -478,6 +478,86 @@ class Vendor {
     }
   }
 
+  async assignMultipleHubsToVendor(req, res) {
+    try {
+      let { vendorId, hubIds } = req.body;
+
+      if (!vendorId || !hubIds || hubIds.length === 0) {
+        return res.status(400).json({ error: "Vendor ID and at least one hub are required" });
+      }
+
+      // Fetch hub details
+      const OurhubModel = require("../../Modal/Admin/Ourhub");
+      const hubs = await OurhubModel.find({ _id: { $in: hubIds } });
+
+      if (hubs.length === 0) {
+        return res.status(404).json({ error: "No hubs found" });
+      }
+
+      // Format hub data
+      const assignedHubs = hubs.map(hub => ({
+        hubId: hub._id,
+        hubName: hub.hubName,
+        areaName: hub.areaName,
+        pincodes: hub.pincodes,
+      }));
+
+      // Update vendor
+      let data = await vendorModel.findOneAndUpdate(
+        { _id: vendorId },
+        { $set: { assignedHubs } },
+        { new: true }
+      );
+
+      if (!data) return res.status(400).json({ error: "Vendor not found" });
+      return res.status(200).json({ success: "Hubs assigned successfully", vendor: data });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ error: "Failed to assign hubs" });
+    }
+  }
+
+  async removeHubFromVendor(req, res) {
+    try {
+      let { vendorId, hubId } = req.body;
+
+      let vendor = await vendorModel.findById(vendorId);
+      if (!vendor) return res.status(404).json({ error: "Vendor not found" });
+
+      vendor.assignedHubs = vendor.assignedHubs.filter(
+        hub => hub.hubId.toString() !== hubId
+      );
+
+      await vendor.save();
+      return res.status(200).json({ success: "Hub removed successfully", vendor });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ error: "Failed to remove hub" });
+    }
+  }
+
+  // Helper method to check if vendor serves a pincode
+  async getVendorsByPincode(req, res) {
+    try {
+      const { pincode } = req.params;
+
+      // Find vendors who have this pincode in their assignedHubs OR in legacy assignmentHubPincode
+      const vendors = await vendorModel.find({
+        $or: [
+          { "assignedHubs.pincodes": pincode },
+          { assignmentHubPincode: parseInt(pincode) }
+        ],
+        isBlock: false,
+        status: "Approved"
+      });
+
+      return res.status(200).json({ success: vendors });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ error: "Failed to fetch vendors" });
+    }
+  }
+
   async updatevendortoken(req,res){
     try {
       let { id, token } = req.body;

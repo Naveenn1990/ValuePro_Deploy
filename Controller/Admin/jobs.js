@@ -24,9 +24,14 @@ async function assignedJobAuto(id) {
       return console.log("Job has already been accepted, no need to assign.");
     }
 
+    // Find vendors assigned to this pincode (supports both old and new hub assignment)
     let vendors = await vendorModel.find({
-      assignmentHubPincode: job.pincode,
-      isBlock: false, $or: [{ AvRating: { $gt: 4.5 } }, { ResponseRate: { $lt: 20 } }],
+      $or: [
+        { assignmentHubPincode: job.pincode },
+        { "assignedHubs.pincodes": job.pincode.toString() }
+      ],
+      isBlock: false, 
+      $or: [{ AvRating: { $gt: 4.5 } }, { ResponseRate: { $lt: 20 } }],
       status: "Approved"
     });
 
@@ -434,10 +439,24 @@ class Jobs {
       let check = await jobsModel.findOne({ _id: id });
       if (!check) return res.status(400).json({ error: "Data Not found" });
       let am = await vendorModel.findById(vendorId);
+      
+      // Helper function to check if vendor serves this pincode
+      const vendorServesPincode = (vendor, pincode) => {
+        // Check legacy field
+        if (vendor.assignmentHubPincode == pincode) return true;
+        // Check new assignedHubs array
+        if (vendor.assignedHubs && vendor.assignedHubs.length > 0) {
+          return vendor.assignedHubs.some(hub => 
+            hub.pincodes.includes(pincode.toString())
+          );
+        }
+        return false;
+      };
+      
       if (VendorStatus == "Accepted") {
         if (
           check?.VendorStatus == "Flash" &&
-          am.assignmentHubPincode !== check.pincode
+          !vendorServesPincode(am, check.pincode)
         ) {
           check.JobAssignedVendor.push({
             vendorId: vendorId,
@@ -462,7 +481,7 @@ class Jobs {
       });
       if (
         check?.VendorStatus == "Flash" &&
-        am.assignmentHubPincode !== check.pincode
+        !vendorServesPincode(am, check.pincode)
       ) {
         check.JobAssignedVendor.push({
           vendorId: vendorId,

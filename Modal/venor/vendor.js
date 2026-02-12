@@ -140,6 +140,22 @@ const VenorSchema = new mongoose.Schema(
     assignmentTime: {
       type: String,
     },
+    assignedHubs: [{
+      hubId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Ourhub",
+      },
+      hubName: {
+        type: String,
+      },
+      areaName: {
+        type: String,
+      },
+      pincodes: [{
+        type: String,
+      }],
+    }],
+    // Legacy fields - keeping for backward compatibility
     assignmentHubPincode: {
       type: Number,
     },
