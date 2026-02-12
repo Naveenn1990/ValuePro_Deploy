@@ -143,6 +143,3 @@ class Ourhub {
 
 const Ourhubcontroller = new Ourhub();
 module.exports = Ourhubcontroller;
-
-const Ourhubcontroller = new Ourhub();
-module.exports = Ourhubcontroller;
