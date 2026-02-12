@@ -6,5 +6,7 @@ router.post("/addOurhub", Ourhubcontroller.addOurhub);
 router.put("/editOurhub", Ourhubcontroller.editOurhub);
 router.get("/getOurhub", Ourhubcontroller.getOurhub);
 router.delete("/deleteOurhub/:id", Ourhubcontroller.deleteOurhub);
+router.post("/addPincodeToHub", Ourhubcontroller.addPincodeToHub);
+router.post("/removePincodeFromHub", Ourhubcontroller.removePincodeFromHub);
 
 module.exports = router;

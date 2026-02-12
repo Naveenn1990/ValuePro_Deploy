@@ -3,25 +3,18 @@ const Schema = mongoose.Schema;
 
 const Ourhub = new Schema(
   {
-    name: {
+    hubName: {
       type: String,
+      required: true,
     },
-    // state: {
-    //     type: String,
-    // },
-    // city: {
-    //     type: String,
-    // },
-    // area: {
-    //     type: String,
-    // },
-    pincode: {
+    areaName: {
       type: String,
+      required: true,
     },
-    pincodeid: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Pincode",
-    },
+    pincodes: [{
+      type: String,
+      required: true,
+    }],
   },
   { timestamps: true }
 );
