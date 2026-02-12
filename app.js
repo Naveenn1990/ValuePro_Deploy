@@ -810,6 +810,7 @@ const RevisitRequest = require("./Routes/User/ProRequest");
 const phonepay = require('./Routes/User/phonepayRoutes');
 const { uploadFile2 } = require("./Config/AWS.js");
 const visitCharge=require('./Routes/Admin/VisitCharge')
+const Settlement = require('./Routes/Admin/Settlement');
 // create route
 
 // User
@@ -842,6 +843,7 @@ app.use("/api/admin", pincodeRoute);
 app.use("/api/admin", ourhubRoute);
 app.use("/api/admin", protimingRoute);
 app.use("/api/admin", videoRoutes);
+app.use("/api/admin", Settlement);
 app.use("/api/admin", Contact);
 app.use("/api/admin", FAQ);
 app.use("/api/admin", SocialMedias);
