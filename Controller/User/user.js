@@ -202,34 +202,33 @@ class Auth {
   //   Edit user
 
   async edituser(req, res) {
-    let { userId, name, email, phone, password } = req.body;
+    try {
+      let { userId, name, email, phone, password } = req.body;
 
-    let obj = {};
-    if (name) {
-      obj["name"] = name;
-    }
-    if (email) {
-      obj["email"] = email;
-    }
-    if (phone) {
-      obj["phone"] = phone;
-    }
-    if (password) {
-      obj["password"] = await bcrypt.hash(password, 10);
-    }
+      if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+      }
 
-    let user = await userModal.findByIdAndUpdate(
-      userId,
-      { $set: obj },
-      { new: true }
-    );
+      let obj = {};
+      if (name) obj["name"] = name;
+      if (email) obj["email"] = email;
+      if (phone) obj["phone"] = phone;
+      if (password) obj["password"] = await bcrypt.hash(password, 10);
 
-    if (user) {
-      return res
-        .status(200)
-        .json({ success: "Updated successfully", user: user });
+      let user = await userModal.findByIdAndUpdate(
+        userId,
+        { $set: obj },
+        { new: true }
+      );
+
+      if (user) {
+        return res.status(200).json({ success: "Updated successfully", user });
+      }
+      return res.status(404).json({ error: "User not found" });
+    } catch (error) {
+      console.log("edituser error:", error);
+      return res.status(500).json({ error: "Something went wrong" });
     }
-    return res.status(500).json({ error: "something went wrong" });
   }
 
   async makeBlockUnblockUser(req, res) {

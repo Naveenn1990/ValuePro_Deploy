@@ -42,14 +42,39 @@ class Service {
 
   async getService(req, res) {
     try {
-      let Service = await ServiceModel.find({});
-      if (Service) {
-        return res.status(200).json({ Service: Service });
+      const page   = parseInt(req.query.page)  || 1;
+      const limit  = parseInt(req.query.limit) || 20;
+      const skip   = (page - 1) * limit;
+      const search = req.query.search || '';
+
+      // Build filter
+      const filter = {};
+      if (req.query.category) {
+        filter.category = req.query.category;
+      }
+      if (search) {
+        filter.name = { $regex: search, $options: 'i' }; // case-insensitive
+      }
+
+      const [Service, total] = await Promise.all([
+        ServiceModel.find(filter).skip(skip).limit(limit),
+        ServiceModel.countDocuments(filter),
+      ]);
+
+      if (Service && Service.length > 0) {
+        return res.status(200).json({
+          Service,
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        });
       } else {
-        return res.status(403).json({ error: "No Service exist" });
+        return res.status(200).json({ Service: [], total: 0, page, limit, totalPages: 0 });
       }
     } catch (error) {
       console.log(error);
+      return res.status(500).json({ error: "Something went wrong" });
     }
   }
 
