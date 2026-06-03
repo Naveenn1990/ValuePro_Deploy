@@ -42,14 +42,35 @@ class Service {
 
   async getService(req, res) {
     try {
-      // Simple fetch all - filtering happens on frontend like the original working code
-      const Service = await ServiceModel.find({});
-      
-      if (Service && Service.length > 0) {
-        return res.status(200).json({ Service });
-      } else {
-        return res.status(200).json({ Service: [] });
+      const page  = parseInt(req.query.page)  || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const skip  = (page - 1) * limit;
+
+      const filter = {};
+
+      // Category: match with trim on both sides to handle trailing spaces in DB
+      if (req.query.category && req.query.category.trim()) {
+        const cat = req.query.category.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        filter.category = { $regex: `^\\s*${cat}\\s*$`, $options: 'i' };
       }
+
+      // Search by name
+      if (req.query.search && req.query.search.trim()) {
+        filter.name = { $regex: req.query.search.trim(), $options: 'i' };
+      }
+
+      const [Service, total] = await Promise.all([
+        ServiceModel.find(filter).skip(skip).limit(limit),
+        ServiceModel.countDocuments(filter),
+      ]);
+
+      return res.status(200).json({
+        Service: Service || [],
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      });
     } catch (error) {
       console.log(error);
       return res.status(500).json({ error: "Something went wrong" });
