@@ -49,9 +49,11 @@ class Service {
 
       console.log('[getService] query:', req.query); // debug — remove after confirming
 
-      const filter = {};
+      const filter = { isActive: true };
       if (req.query.category) {
-        filter.category = { $regex: `^${req.query.category.trim()}$`, $options: 'i' };
+        // trim and escape special regex chars from the category value
+        const catEscaped = req.query.category.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        filter.category = { $regex: `^\\s*${catEscaped}\\s*$`, $options: 'i' };
       }
       if (search) {
         filter.name = { $regex: search, $options: 'i' };
