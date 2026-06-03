@@ -42,40 +42,13 @@ class Service {
 
   async getService(req, res) {
     try {
-      const page   = parseInt(req.query.page)  || 1;
-      const limit  = parseInt(req.query.limit) || 20;
-      const skip   = (page - 1) * limit;
-      const search = req.query.search || '';
-
-      console.log('[getService] query:', req.query); // debug — remove after confirming
-
-      const filter = {};
-      if (req.query.category) {
-        // trim and escape special regex chars from the category value
-        const catEscaped = req.query.category.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        filter.category = { $regex: `^\\s*${catEscaped}\\s*$`, $options: 'i' };
-      }
-      if (search) {
-        filter.name = { $regex: search, $options: 'i' };
-      }
-
-      console.log('[getService] filter:', JSON.stringify(filter)); // debug
-
-      const [Service, total] = await Promise.all([
-        ServiceModel.find(filter).skip(skip).limit(limit),
-        ServiceModel.countDocuments(filter),
-      ]);
-
+      // Simple fetch all - filtering happens on frontend like the original working code
+      const Service = await ServiceModel.find({});
+      
       if (Service && Service.length > 0) {
-        return res.status(200).json({
-          Service,
-          total,
-          page,
-          limit,
-          totalPages: Math.ceil(total / limit),
-        });
+        return res.status(200).json({ Service });
       } else {
-        return res.status(200).json({ Service: [], total: 0, page, limit, totalPages: 0 });
+        return res.status(200).json({ Service: [] });
       }
     } catch (error) {
       console.log(error);
