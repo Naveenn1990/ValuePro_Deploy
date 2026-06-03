@@ -47,14 +47,17 @@ class Service {
       const skip   = (page - 1) * limit;
       const search = req.query.search || '';
 
-      // Build filter
+      console.log('[getService] query:', req.query); // debug — remove after confirming
+
       const filter = {};
       if (req.query.category) {
-        filter.category = req.query.category;
+        filter.category = { $regex: `^${req.query.category.trim()}$`, $options: 'i' };
       }
       if (search) {
-        filter.name = { $regex: search, $options: 'i' }; // case-insensitive
+        filter.name = { $regex: search, $options: 'i' };
       }
+
+      console.log('[getService] filter:', JSON.stringify(filter)); // debug
 
       const [Service, total] = await Promise.all([
         ServiceModel.find(filter).skip(skip).limit(limit),
