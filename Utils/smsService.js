@@ -30,7 +30,7 @@ async function sendOTP(mobile, otp, type = 'login') {
     const isSignup = type === 'signup';
 
     // Use signup template if available, else fall back to login template
-    const SIGNUP_TEMPLATE_ID = ''; // ← paste your signup DLT TemplateID here once approved
+    const SIGNUP_TEMPLATE_ID = '1707178056795072484';
 
     const templateID = (isSignup && SIGNUP_TEMPLATE_ID)
       ? SIGNUP_TEMPLATE_ID
