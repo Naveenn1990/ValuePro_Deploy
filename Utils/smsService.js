@@ -23,10 +23,22 @@ async function sendOTP(mobile, otp, type = 'login') {
       format: 'JSON',
     };
 
-    // IMPORTANT: Message must match EXACTLY the DLT registered template
-    // TemplateID: 1707178048769071567
-    // Registered text: "VALUEPRO SERVICE: Your OTP for login is {#var#}. Valid for 10 minutes. Do not share this OTP with anyone."
-    const message = `VALUEPRO SERVICE: Your OTP for login is ${otp}. Valid for 10 minutes. Do not share this OTP with anyone.`;
+    // DLT registered templates:
+    // Login  TemplateID: 1707178048769071567 → "Your OTP for login is {#var#}..."
+    // Signup TemplateID: REPLACE_WITH_SIGNUP_TEMPLATE_ID → "Your OTP for registration is {#var#}..."
+
+    const isSignup = type === 'signup';
+
+    // Use signup template if available, else fall back to login template
+    const SIGNUP_TEMPLATE_ID = ''; // ← paste your signup DLT TemplateID here once approved
+
+    const templateID = (isSignup && SIGNUP_TEMPLATE_ID)
+      ? SIGNUP_TEMPLATE_ID
+      : SMS_CONFIG.templateID;
+
+    const message = isSignup && SIGNUP_TEMPLATE_ID
+      ? `VALUEPRO SERVICE: Your OTP for registration is ${otp}. Valid for 10 minutes. Do not share this OTP with anyone.`
+      : `VALUEPRO SERVICE: Your OTP for login is ${otp}. Valid for 10 minutes. Do not share this OTP with anyone.`;
 
     // Build query params
     const params = new URLSearchParams({
@@ -37,7 +49,7 @@ async function sendOTP(mobile, otp, type = 'login') {
       mobile: mobile,
       message: message,
       route: SMS_CONFIG.route,
-      TemplateID: SMS_CONFIG.templateID,
+      TemplateID: templateID,
       format: SMS_CONFIG.format,
     });
 
