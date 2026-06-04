@@ -23,13 +23,10 @@ async function sendOTP(mobile, otp, type = 'login') {
       format: 'JSON',
     };
 
-    // Build message based on type
-    let message;
-    if (type === 'signup') {
-      message = `VALUEPRO SERVICE: Your OTP for registration is ${otp}. Valid for 10 minutes. Do not share this OTP with anyone.`;
-    } else {
-      message = `VALUEPRO SERVICE: Your OTP for login is ${otp}. Valid for 10 minutes. Do not share this OTP with anyone.`;
-    }
+    // IMPORTANT: Message must match EXACTLY the DLT registered template
+    // TemplateID: 1707178048769071567
+    // Registered text: "VALUEPRO SERVICE: Your OTP for login is {#var#}. Valid for 10 minutes. Do not share this OTP with anyone."
+    const message = `VALUEPRO SERVICE: Your OTP for login is ${otp}. Valid for 10 minutes. Do not share this OTP with anyone.`;
 
     // Build query params
     const params = new URLSearchParams({
@@ -45,7 +42,7 @@ async function sendOTP(mobile, otp, type = 'login') {
     });
 
     const url = `${SMS_CONFIG.baseURL}?${params.toString()}`;
-    console.log('[SMS] Sending OTP to:', mobile, '| Type:', type);
+    console.log('[SMS] Sending OTP to:', mobile);
 
     const response = await axios.get(url, { timeout: 10000, httpsAgent });
 
