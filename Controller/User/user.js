@@ -3,51 +3,28 @@ const { validateEmail, toTitleCase } = require("../../Config/function");
 const otpModel = require("../../Modal/User/otpModel");
 const bcrypt = require("bcryptjs");
 const axios = require("axios");
+const { sendOTP, generateOTP } = require("../../Utils/smsService");
 class Auth {
   async signup(req, res) {
     let {
       name,
       email,
       phone,
-      //   password,
-      //   confirmpassword,
-      //   houseno,
-      //   landmark,
-      //   addressVal,
     } = req.body;
     try {
-      if (
-        !name ||
-        !email ||
-        !phone
-        // ||
-        // !password ||
-        // !confirmpassword 
-
-      ) {
+      if (!name || !email || !phone) {
         return res.status(400).json({ error: "All field must not be empty" });
       }
       if (name.length < 3 && name.length > 25) {
         return res.status(400).json({ error: "Name must be 3-25 charecter" });
       }
-      //   if (password.length < 8) {
-      //     return res
-      //       .status(400)
-      //       .json({ error: "password should be more than 8" });
-      //   }
-      //   if (password !== confirmpassword) {
-      //     return res.status(400).json({ error: "password not match" });
-      //   }
       if (!validateEmail(email)) {
         return res.status(400).json({ error: "Email is not valid" });
       }
 
-      //   password = await bcrypt.hash(password, 10);
-      //   confirmpassword = await bcrypt.hash(confirmpassword, 10);
       name = toTitleCase(name);
 
       const Email = await userModal.findOne({ email: email });
-      console.log(Email);
       if (Email) {
         return res.status(400).json({ error: "Email already exits" });
       }
@@ -56,110 +33,144 @@ class Auth {
         return res.status(400).json({ error: "mobile number already exits" });
       }
 
-      let Newuser = new userModal({
-        name,
-        email,
-        phone,
-        // password,
-        // confirmpassword,
-
-        // houseno,
-        // landmark,
-        // userAddresses: [
-        //   {
-        //     address: addressVal,
-        //   },
-        // ],
-      });
+      let Newuser = new userModal({ name, email, phone });
       Newuser.save().then((data) => {
-        console.log(data);
-        return res
-          .status(200)
-          .json({ success: "true", message: "Signup Success, Please login" });
+        return res.status(200).json({ success: "true", message: "Signup Success, Please login" });
       });
     } catch (error) {
       console.log("error");
-      return res.status(500).json({
-        msg: false,
-        error: "Errro in Registeration",
+      return res.status(500).json({ msg: false, error: "Errro in Registeration" });
+    }
+  }
+
+  // ── Send OTP before signup (verify phone is real) ─────────────
+  async sendSignupOtp(req, res) {
+    const { phone } = req.body;
+    try {
+      if (!phone || phone.length !== 10) {
+        return res.status(400).json({ error: "Enter a valid 10-digit mobile number" });
+      }
+
+      // Check if already registered
+      const existing = await userModal.findOne({ phone });
+      if (existing) {
+        return res.status(400).json({ error: "Mobile number already registered. Please login." });
+      }
+
+      const otp = generateOTP();
+
+      // Save/update OTP in DB
+      const existing_otp = await otpModel.findOne({ phone });
+      if (!existing_otp) {
+        await otpModel.create({ phone, otp });
+      } else {
+        await otpModel.findOneAndUpdate({ phone }, { $set: { otp } }, { new: true });
+      }
+
+      // Send real SMS
+      const smsResult = await sendOTP(phone, otp, 'signup');
+      if (!smsResult.success) {
+        console.error('[sendSignupOtp] SMS failed:', smsResult.message);
+        return res.status(500).json({ error: "Failed to send OTP. Please try again." });
+      }
+
+      return res.status(200).json({ success: "OTP sent to your mobile number" });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ error: "Something went wrong" });
+    }
+  }
+
+  // ── Verify signup OTP then create account ─────────────────────
+  async verifySignupOtp(req, res) {
+    const { phone, otp, name, email } = req.body;
+    try {
+      if (!phone || !otp || !name || !email) {
+        return res.status(400).json({ error: "All fields are required" });
+      }
+
+      // Verify OTP
+      const otpRecord = await otpModel.findOne({ phone, otp });
+      if (!otpRecord) {
+        return res.status(400).json({ error: "Invalid OTP. Please try again." });
+      }
+
+      if (!validateEmail(email)) {
+        return res.status(400).json({ error: "Email is not valid" });
+      }
+
+      // Double-check duplicates
+      const emailExists = await userModal.findOne({ email });
+      if (emailExists) {
+        return res.status(400).json({ error: "Email already exists" });
+      }
+      const phoneExists = await userModal.findOne({ phone });
+      if (phoneExists) {
+        return res.status(400).json({ error: "Mobile number already registered" });
+      }
+
+      // Create user
+      const newUser = await userModal.create({
+        name: toTitleCase(name),
+        email,
+        phone,
       });
+
+      // Clean up OTP
+      await otpModel.deleteOne({ phone });
+
+      return res.status(200).json({
+        success: "Account created successfully",
+        details: newUser,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ error: "Something went wrong" });
     }
   }
 
   async signinwithphone(req, res) {
     const { phone } = req.body;
     try {
-
       const isPhonePresent = await userModal.findOne({ phone: phone });
       if (!isPhonePresent) {
-        return res
-          .status(400)
-          .json({ error: "Phone number is not registered..." });
+        return res.status(400).json({ error: "Phone number is not registered..." });
       }
 
       if (isPhonePresent.isBlock == true) {
         return res.status(400).json({ error: "Blocked by Admin. Please contact!!!" });
       }
 
-      let otp = (Math.floor(Math.random() * 1000000) + 1000000)
-        .toString()
-        .substring(1);
+      // Generate real 6-digit OTP
+      const otp = generateOTP();
 
-      // Checking that the phone is already present in the DB or not.
-
+      // Save/update OTP in DB
       const phoneNoPresent = await otpModel.findOne({ phone: phone });
-
-      const key = "Ae97f7ad9d6c2647071d78b6e94a3c87e";
-      const sid = "RDABST";
-      const to = phone;
-      const body = `Hi, Your OTP for mobile verification is ${otp} Regards, Team ReadAbstract`;
-      //   axios
-      //     .get(
-      //       "https://api-alerts.kaleyra.com/v4/?api_key=" +
-      //         key +
-      //         "&method=sms&message=" +
-      //         body +
-      //         "&to=" +
-      //         to +
-      //         "&sender=RDABST"
-      //     )
-      //     .then(async (data) => {
-      //       console.log(`statusCode: ${data.status}`);
-      //       console.log(data);
       if (!phoneNoPresent) {
-        let newotp = new otpModel({
-          phone,
-          otp: 123456,
-        });
-        newotp
-          .save()
-          .then((data) => {
-            return res.status(200).json({
-              success: `OTP sent: ${data.otp}`,
-              details: isPhonePresent,
-            });
-          })
-          .catch((error) => {
-            return res.status(400).json({ error: error });
-          });
+        await otpModel.create({ phone, otp });
       } else {
         await otpModel.findOneAndUpdate(
           { phone: phone },
-          { $set: { otp: 123456 } },
+          { $set: { otp } },
           { new: true }
         );
-        return res.status(200).json({
-          success: "OTP send successfully",
-          details: isPhonePresent,
-        });
       }
-      // })
-      // .catch((error) => {
-      //   console.error(error);
-      //   return res.status(500).json({ error: error });
-      // });
+
+      // Send real SMS
+      const smsResult = await sendOTP(phone, otp, 'login');
+
+      if (!smsResult.success) {
+        console.error('[signinwithphone] SMS failed:', smsResult.message);
+        // Still allow login but log the failure — don't block user
+      }
+
+      return res.status(200).json({
+        success: "OTP sent successfully",
+        details: isPhonePresent,
+      });
     } catch (error) {
       console.log(error);
+      return res.status(500).json({ error: "Something went wrong" });
     }
   }
 
