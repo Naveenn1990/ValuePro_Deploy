@@ -49,13 +49,36 @@ class Service {
 
       const filter = {};
 
-      // Category: match with trim on both sides to handle trailing spaces in DB
-      if (req.query.category && req.query.category.trim()) {
-        const cat = req.query.category.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        filter.category = { $regex: `^\\s*${cat}\\s*$`, $options: 'i' };
-      }
+      // Dynamic filters for any field provided in query
+      const filterableFields = [
+        "ProductName",
+        "category",
+        "name",
+        "price",
+        "tax",
+        "warrantyperiod",
+        "isActive",
+        "commission"
+      ];
 
-      // Search by name
+      filterableFields.forEach((field) => {
+        if (req.query[field] && req.query[field].trim()) {
+          const value = req.query[field].trim();
+          
+          if (field === "category") {
+            const cat = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            filter.category = { $regex: `^\\s*${cat}\\s*$`, $options: 'i' };
+          } else if (field === "name" || field === "ProductName") {
+            filter[field] = { $regex: value, $options: 'i' };
+          } else if (field === "isActive") {
+            filter[field] = value === "true";
+          } else {
+            filter[field] = value;
+          }
+        }
+      });
+
+      // Search by name (alias for 'name' field if 'search' query is used)
       if (req.query.search && req.query.search.trim()) {
         filter.name = { $regex: req.query.search.trim(), $options: 'i' };
       }
