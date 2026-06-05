@@ -42,6 +42,7 @@ class Service {
 
   async getService(req, res) {
     try {
+      const isPaginationRequested = req.query.page || req.query.limit;
       const page  = parseInt(req.query.page)  || 1;
       const limit = parseInt(req.query.limit) || 20;
       const skip  = (page - 1) * limit;
@@ -59,17 +60,22 @@ class Service {
         filter.name = { $regex: req.query.search.trim(), $options: 'i' };
       }
 
+      let query = ServiceModel.find(filter);
+      if (isPaginationRequested) {
+        query = query.skip(skip).limit(limit);
+      }
+
       const [Service, total] = await Promise.all([
-        ServiceModel.find(filter).skip(skip).limit(limit),
+        query,
         ServiceModel.countDocuments(filter),
       ]);
 
       return res.status(200).json({
         Service: Service || [],
         total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+        page: isPaginationRequested ? page : 1,
+        limit: isPaginationRequested ? limit : total,
+        totalPages: isPaginationRequested ? Math.ceil(total / limit) : 1,
       });
     } catch (error) {
       console.log(error);
