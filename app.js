@@ -769,6 +769,7 @@ app.get("/getAuthenticateFacebyVendor/:id", async (req, res) => {
 const userRoute = require("./Routes/User/user");
 const adminRoute = require("./Routes/Admin/Admin1");
 const bannerRoute = require("./Routes/Admin/Banner1");
+const serviceBannerRoute = require("./Routes/Admin/ServiceBanner");
 const createhubRoute = require("./Routes/Admin/Createhub");
 const ourhubRoute = require("./Routes/Admin/Ourhub");
 const protimingRoute = require("./Routes/Admin/Protiming");
@@ -836,6 +837,7 @@ app.use("/api/admin", Service);
 // Admin
 app.use("/api/admin", adminRoute);
 app.use("/api/admin", bannerRoute);
+app.use("/api/admin", serviceBannerRoute);
 app.use("/api/admin", CategoryRoute);
 app.use("/api/admin", OffersRoute);
 app.use("/api/admin", createhubRoute);
