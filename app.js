@@ -92,6 +92,25 @@ const initiateCall = async (req, res) => {
             channel_id: 'call-channel',
             sound: "ringtone",
           },
+          priority: 'high',
+        },
+        apns: {
+          headers: {
+            'apns-priority': '10',
+            'apns-push-type': 'alert',
+          },
+          payload: {
+            aps: {
+              'content-available': 1,
+              alert: {
+                title: 'Incoming Call',
+                body: `Call from ${user.name}`,
+              },
+              sound: 'default',
+              'mutable-content': 1,
+              'interruption-level': 'time-sensitive',
+            },
+          },
         },
         data: {
           callId,
